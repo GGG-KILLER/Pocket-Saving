@@ -3,36 +3,36 @@ if not SERVER then return end
 PocketSave = {}
 PocketSave.Configs = {}
 
-PocketSave.Configs.Debug = true // Debug mode?
-// Debug mode activates the following:
-// 1. Log this addon's initialization time
-// 2. Adds a command to get this addon's initialization time
-// 3. Prints whenever a item has been added/removed from a player's pocket
-// 4. Prints whenever a pocket is being saved/loaded
-// Apart from these it won't affect anything
+PocketSave.Configs.Debug = true -- Debug mode?
+-- Debug mode activates the following:
+-- 1. Log this addon's initialization time
+-- 2. Adds a command to get this addon's initialization time
+-- 3. Prints whenever a item has been added/removed from a player's pocket
+-- 4. Prints whenever a pocket is being saved/loaded
+-- Apart from these it won't affect anything
 
 
-PocketSave.Configs.Compress = true // Compress saves?
-// Compressing saves will reduce the size of each save,
-// but it might raise the saving time a little.
-// I'd reccomend you enable debug mode and use the "psave_benchmark" command
-// before setting this config.
+PocketSave.Configs.Compress = true -- Compress saves?
+-- Compressing saves will reduce the size of each save,
+-- but it might raise the saving time a little.
+-- I'd reccomend you enable debug mode and use the "psave_benchmark" command
+-- before setting this config.
 
-//////////////////////////////////////////////////////////////////////////
-///  Don't mess past this point unless you know what you are doing     ///
-//////////////////////////////////////////////////////////////////////////
+--------------------------------------------------------------------------
+---  Don't mess past this point unless you know what you are doing     ---
+--------------------------------------------------------------------------
 
-///////////////////////
-// Configs acronyms  //
-///////////////////////
+-----------------------
+-- Configs acronyms  --
+-----------------------
 local dbg = PocketSave.Configs.Debug
 local cps = PocketSave.Configs.Compress
 
-///////////////////////
-//       Stuff       //
-///////////////////////
+-----------------------
+--       Stuff       --
+-----------------------
 local istart
-local log = function(a,...) // Fancy logging function
+local log = function(a,...) -- Fancy logging function
 	if(a and type(a) == "bool" and !dbg)then return end
 	MsgN("[PocketSave]: ",(type(a)=="string" and a or ""),...)
 end
@@ -41,52 +41,52 @@ log("Initializing")
 if(dbg)then
 	istart = SysTime()
 end
-///////////////////////
-// Utility functions //
-///////////////////////
-function PocketSave.FileSystemCheck() // Functions which checks if the folder on the data folder was created correctly
+-----------------------
+-- Utility functions --
+-----------------------
+function PocketSave.FileSystemCheck() -- Functions which checks if the folder on the data folder was created correctly
 	log("Checking filesystem")
-	if not file.Exists("psave", "DATA") then // If it doesn't exists
-		log(true,"Creating folder on data path") // Log the folder creation only if its on debug mode
-		file.CreateDir("psave") // Creates as directory
+	if not file.Exists("psave", "DATA") then -- If it doesn't exists
+		log(true,"Creating folder on data path") -- Log the folder creation only if its on debug mode
+		file.CreateDir("psave") -- Creates as directory
 	end
 	
-	if not file.IsDir( "psave", "DATA" ) then // If its the wrong type
-		log(true,"Creating folder on data path") // Log that shit happened only if its on debug mode
-		file.Delete( "psave" ) // Delete the wrongly created file/folder
-		file.CreateDir( "psave" ) // Create as directory
+	if not file.IsDir( "psave", "DATA" ) then -- If its the wrong type
+		log(true,"Creating folder on data path") -- Log that shit happened only if its on debug mode
+		file.Delete( "psave" ) -- Delete the wrongly created file/folder
+		file.CreateDir( "psave" ) -- Create as directory
 	end
 end
 
-function PocketSave.SaveTbl( sid, tbl, cm ) // Function to save a table of items by SteamID
+function PocketSave.SaveTbl( sid, tbl, cm ) -- Function to save a table of items by SteamID
 	cm=(cm and cm or true)
-	PocketSave.FileSystemCheck() // Make a filesystem check
-	local items = util.Compress(util.TableToJSON(tbl or {})) // Compress the items' JSON
-	local fname = string.lower("pocket_"..string.Replace(sid, ":", "_")) // Get the file name which the pocket will be saved to
-	log(true,"Saving the pocket of ",sid) // Tell that we're saving the pocket of the player only if its on debug mode
-	file.Write("psave/"..fname..".txt", items) // Save the pocket
+	PocketSave.FileSystemCheck() -- Make a filesystem check
+	local items = util.Compress(util.TableToJSON(tbl or {})) -- Compress the items' JSON
+	local fname = string.lower("pocket_"..string.Replace(sid, ":", "_")) -- Get the file name which the pocket will be saved to
+	log(true,"Saving the pocket of ",sid) -- Tell that we're saving the pocket of the player only if its on debug mode
+	file.Write("psave/"..fname..".txt", items) -- Save the pocket
 end
 
 
-///////////////////////
-//  Hooks functions  //
-///////////////////////
+-----------------------
+--  Hooks functions  --
+-----------------------
 
 function PocketSave.Initialize()
 	log("Initializing")
-	PocketSave.FileSystemCheck() // Check if the folder is set correctly...
+	PocketSave.FileSystemCheck() -- Check if the folder is set correctly...
 end
 
 function PocketSave.PlayerInitialSpawn(ply)
-	local SteamID = ply:SteamID() // SteamID since everything is SteamID based
+	local SteamID = ply:SteamID() -- SteamID since everything is SteamID based
 	
 	log(true,"Retrieving the pocket of ",SteamID)
-	if(!file.Exists("psave/pocket_"..string.Replace(SteamID, ":", "_")..".txt", "DATA"))then return end // The player doesn't has anything on his/her pocket
+	if(!file.Exists("psave/pocket_"..string.Replace(SteamID, ":", "_")..".txt", "DATA"))then return end -- The player doesn't has anything on his/her pocket
 	
-	local ptbl = util.JSONToTable( // Convert from JSON
-		util.Decompress( // Decompress file
-			file.Read( // Read file
-				"psave/"string.lower("pocket_"..string.Replace(SteamID, ":", "_"))..".txt", // File name
+	local ptbl = util.JSONToTable( -- Convert from JSON
+		util.Decompress( -- Decompress file
+			file.Read( -- Read file
+				"psave/"string.lower("pocket_"..string.Replace(SteamID, ":", "_"))..".txt", -- File name
 				"DATA"
 			) or ""
 		) or {}
@@ -97,41 +97,41 @@ function PocketSave.PlayerInitialSpawn(ply)
 end
 
 function PocketSave.onPocketItemAdded( ply, _, serialized )
-	local itbl = ply.darkRPPocket // Make a temporary table
-	itbl = table.insert(itbl, serialized) // Add the picked/added item since we recieve the unchanged table
-	PocketSave.SaveTbl( ply:SteamID(), itbl ) // Update by SteamID
+	local itbl = ply.darkRPPocket -- Make a temporary table
+	itbl = table.insert(itbl, serialized) -- Add the picked/added item since we recieve the unchanged table
+	PocketSave.SaveTbl( ply:SteamID(), itbl ) -- Update by SteamID
 end
 
 function PocketSave.onPocketItemRemoved( ply, item )
-	local itbl = ply.darkRPPocket // Make a temporary table
-	itbl[item] = nil // Remove the dropped/removed item since we recieve the unchanged table
-	PocketSave.SaveTbl( ply:SteamID(), itbl ) // Update by SteamID
+	local itbl = ply.darkRPPocket -- Make a temporary table
+	itbl[item] = nil -- Remove the dropped/removed item since we recieve the unchanged table
+	PocketSave.SaveTbl( ply:SteamID(), itbl ) -- Update by SteamID
 end
 
 function PocketSave.PlayerDisconnected(ply)
-	PocketSave.FileSystemCheck() // Make a filesystem check(yeah, I know we made it on Initialization, but checks are never enough)
-	local items = util.Compress(util.TableToJSON(ply.darkRPPocket or {})) // Compress the items' JSON
-	local fname = string.lower("pocket_"..string.Replace(ply:SteamID(), ":", "_")) // Get the file name which the pocket will be saved to
-	log(true,"Saving the pocket of ",ply:SteamID()) // Tell that we're saving the pocket of the player
-	file.Write("psave/"..fname..".txt", items) // Save the pocket
+	PocketSave.FileSystemCheck() -- Make a filesystem check(yeah, I know we made it on Initialization, but checks are never enough)
+	local items = util.Compress(util.TableToJSON(ply.darkRPPocket or {})) -- Compress the items' JSON
+	local fname = string.lower("pocket_"..string.Replace(ply:SteamID(), ":", "_")) -- Get the file name which the pocket will be saved to
+	log(true,"Saving the pocket of ",ply:SteamID()) -- Tell that we're saving the pocket of the player
+	file.Write("psave/"..fname..".txt", items) -- Save the pocket
 end
 
-local addHook = function(name) hook.Add( name, "PocketSave.Hook."..name, PocketSave[name] ) end // Cbf to type so much
-local remHook = function(name) hook.Remove( name, "PocketSave.Hook."..name ) end // Not used but good to have around just in case
+local addHook = function(name) hook.Add( name, "PocketSave.Hook."..name, PocketSave[name] ) end -- Cbf to type so much
+local remHook = function(name) hook.Remove( name, "PocketSave.Hook."..name ) end -- Not used but good to have around just in case
 
-addHook( "Initialize" ) // Initialize pocket saving system
-addHook( "PlayerInitialSpawn" ) // Sends items on join
-addHook( "onPocketItemAdded" ) // Saves when an item is picked up
-addHook( "onPocketItemRemoved" ) // Saves when an item is dropped/removed
-addHook( "PlayerDisconnected" ) // Saves when player disconects
+addHook( "Initialize" ) -- Initialize pocket saving system
+addHook( "PlayerInitialSpawn" ) -- Sends items on join
+addHook( "onPocketItemAdded" ) -- Saves when an item is picked up
+addHook( "onPocketItemRemoved" ) -- Saves when an item is dropped/removed
+addHook( "PlayerDisconnected" ) -- Saves when player disconects
 
 log("Done!")
 
-if(dbg)then // Debug functions and console commands
-	PocketSave.LoadTime = math.Round( SysTime() - istart, 4) // Don't need huge ass numbers
+if(dbg)then -- Debug functions and console commands
+	PocketSave.LoadTime = math.Round( SysTime() - istart, 4) -- Don't need huge ass numbers
 	local ltls = string.format( "Initialization took %g second(s)", PocketSave.LoadTime )
-	log(ltls) // Shows initialization time
-	concommand.Add("psave_loadtime",function(ply) // Debug stuff only
+	log(ltls) -- Shows initialization time
+	concommand.Add("psave_loadtime",function(ply) -- Debug stuff only
 		if(!p:IsSuperAdmin())then return end
 		if(ply:IsValid())then ply:SendLua([[MsgN("[PocketSave] ]] .. ltls .. [[ ")]])
 		else MsgN(ltls) end
@@ -218,7 +218,7 @@ if(dbg)then // Debug functions and console commands
 		if(td<0.0015 or sd > 2000)then
 			dlog("As of the results of this test, our recomendation is that you use the compressed mode since the saving time is not so affected by it and/or the gap between the saving sizes is too big.")
 		else
-			dlog("As of the results of this test, our recomendation is that you do not use the compressed mode since the saving time is heavily affected by it and/or the gap between the saving sizes isn't too big.") // Even thought I like the compressed mode I have to tell the truth
+			dlog("As of the results of this test, our recomendation is that you do not use the compressed mode since the saving time is heavily affected by it and/or the gap between the saving sizes isn't too big.") -- Even thought I like the compressed mode I have to tell the truth
 		end
 		MsgN("")
 	end)
